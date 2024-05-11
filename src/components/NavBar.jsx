@@ -32,13 +32,13 @@ const NavBar = () => {
                                 className="nav-link dropdown-toggle"
                                 href="#" role="button"
                                 data-bs-toggle="dropdown">
-                                Görli
+                                Sepolia
                                 &nbsp;
                             </NetworkName>
                             <div className="dropdown-menu">
                                 <a className="dropdown-item" href="#">
                                     <NetworkLogo className="logoImg" src="ethLogo.webp"/>
-                                    Görli
+                                    Sepolia
                                 </a>
                             </div>
                         </li>
