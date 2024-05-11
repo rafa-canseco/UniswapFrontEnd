@@ -1,0 +1,66 @@
+import { tokenInfos } from "../constants/index";
+import { getQuoter, getQuoter2 } from "./ContractService";
+import { pools } from "../constants";
+import { getPool } from "./ContractService";
+import Utils from "../utils/Utils";
+import { ethers } from "ethers";
+
+export const getQuote = async (inputAmount, inSymbol, outSymbol) => {
+  if (Utils.isSymbolsEthAndWeth(inSymbol, outSymbol)) {
+    return;
+  }
+
+  const { inputSymbol, outputSymbol } = Utils.EthtoWethString(
+    inSymbol,
+    outSymbol
+  );
+
+  const poolAddress = pools[inputSymbol][outputSymbol][3000];
+
+  const poolContract = getPool(poolAddress);
+  const slot0 = await poolContract.slot0();
+
+  const sqrtPriceX96 = slot0.sqrtPriceX96;
+
+  const token0 = await poolContract.token0();
+  const isToken0Input = inputSymbol === token0;
+
+  let token0Decimals;
+  let token1Decimals;
+  if (isToken0Input) {
+    token0Decimals = tokenInfos[inputSymbol].decimals;
+    token1Decimals = tokenInfos[outputSymbol].decimals;
+  } else {
+    token0Decimals = tokenInfos[outputSymbol].decimals;
+    token1Decimals = tokenInfos[inputSymbol].decimals;
+  }
+
+  const inputAddress = tokenInfos[inputSymbol].address;
+  const outputAddress = tokenInfos[outputSymbol].address;
+  const inputTokenDecimals = tokenInfos[inputSymbol].decimals;
+  const amountIn = Utils.tokensToWei(inputAmount, inputTokenDecimals); ////posible mod
+  const params = {
+    tokenIn: inputAddress,
+    tokenOut: outputAddress,
+    amountIn,
+    fee: 3000,
+    sqrtPriceLimitX96: "0",
+  };
+
+  const quoter = getQuoter2();
+
+  const quote = await quoter.quoteExactInputSingle.staticCall(params);
+  console.log(quote);
+  let outputTokenDecimals;
+  if (isToken0Input) {
+    outputTokenDecimals = token1Decimals;
+  } else {
+    outputTokenDecimals = token0Decimals;
+  }
+  const formattedQuoteIn = ethers.formatUnits(
+    quote[0].toString(),
+    token1Decimals
+  );
+  console.log(formattedQuoteIn);
+  return formattedQuoteIn;
+};
